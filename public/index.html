@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARC AGI Testing Interface</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --card-bg: white;
+            --border-color: #ddd;
+            --shadow-color: rgba(0,0,0,0.1);
+            --button-bg: #007bff;
+            --button-hover: #0056b3;
+            --error-color: #dc3545;
+            --grid-border: #ddd;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #f5f5f5;
+            --card-bg: #2d2d2d;
+            --border-color: #404040;
+            --shadow-color: rgba(0,0,0,0.3);
+            --button-bg: #0d6efd;
+            --button-hover: #0b5ed7;
+            --error-color: #ff4d4d;
+            --grid-border: #404040;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-switch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .theme-switch button {
+            padding: 8px 16px;
+            background: var(--button-bg);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            text-align: center;
+        }
+
+        .grid-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        .grid {
+            display: grid;
+            gap: 2px;
+            margin-bottom: 10px;
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            border: 1px solid var(--grid-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background: var(--button-bg);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--button-hover);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .logs {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .error { 
+            color: var(--error-color); 
+        }
+
+        .debug-info {
+            background: var(--card-bg);
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        button.danger {
+            background: var(--error-color);
+        }
+        button.danger:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ARC AGI Testing Interface</h1>
+        <div class="theme-switch">
+            <button onclick="toggleTheme()" id="themeToggle">🌙 Dark Mode</button>
+        </div>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-box">
+            <h3>Success Rate</h3>
+            <div id="successRate">0.0%</div>
+        </div>
+        <div class="stat-box">
+            <h3>Learned Strategies</h3>
+            <div id="learnedStrategies">0</div>
+        </div>
+        <div class="stat-box">
+            <h3>Total Attempts</h3>
+            <div id="totalAttempts">0</div>
+        </div>
+        <div class="stat-box">
+            <h3>Learning Efficiency</h3>
+            <div id="learningEfficiency">0.0%</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="grid-container">
+            <h2>Input Grid</h2>
+            <div id="inputGrid" class="grid"></div>
+        </div>
+        <div class="grid-container">
+            <h2>Output Grid</h2>
+            <div id="outputGrid" class="grid"></div>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button onclick="solvePuzzle()">Solve Puzzle</button>
+        <button onclick="startAutoSolving()" id="startBtn">Start Auto-Solving</button>
+        <button onclick="stopAutoSolving()" id="stopBtn" disabled>Stop Auto-Solving</button>
+        <button onclick="testConnection()">Test Connection</button>
+        <button onclick="resetStats()" class="danger">Reset Stats</button>
+    </div>
+
+    <div class="logs">
+        <h2>System Logs</h2>
+        <div id="logs"></div>
+    </div>
+
+    <div class="debug-info" id="debugInfo"></div>
+
+    <script>
+        let autoSolving = false;
+        let attemptCount = 0;
+        const API_BASE = 'http://localhost:4000';
+
+        // Theme handling
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            const button = document.getElementById('themeToggle');
+            button.textContent = theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
+        // Initialize theme
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            setTheme(theme);
+        }
+
+        let currentPuzzle = null;
+        let currentPuzzleIndex = 0;
+        let currentTrainPair = 0;
+
+        async function loadNewPuzzle() {
+            try {
+                const response = await fetch(`${API_BASE}/api/puzzle`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentPuzzle = data.puzzle;
+                    currentPuzzleIndex = 0;
+                    currentTrainPair = 0;
+                    displayCurrentPuzzle();
+                    addLog(`Loaded puzzle ${currentPuzzle.id}`);
+                    updateDebugInfo({ currentPuzzle });
+                } else {
+                    addLog('Failed to load puzzle: ' + data.error, true);
+                }
+            } catch (error) {
+                addLog('Error loading puzzle: ' + error.message, true);
+            }
+        }
+
+        function displayCurrentPuzzle() {
+            if (!currentPuzzle) {
+                addLog('No puzzle loaded', true);
+                return;
+            }
+
+            const pair = currentPuzzle.train[currentTrainPair];
+            createGrid(pair.input, 'inputGrid');
+            createGrid(pair.output, 'outputGrid');
+            addLog(`Displaying training pair ${currentTrainPair + 1}/${currentPuzzle.train.length}`);
+        }
+
+        function nextTrainingPair() {
+            if (!currentPuzzle) return;
+            
+            currentTrainPair = (currentTrainPair + 1) % currentPuzzle.train.length;
+            displayCurrentPuzzle();
+        }
+
+        function showTestPuzzle() {
+            if (!currentPuzzle || !currentPuzzle.test || currentPuzzle.test.length === 0) {
+                addLog('No test puzzle available', true);
+                return;
+            }
+
+            const pair = currentPuzzle.test[0];
+            createGrid(pair.input, 'inputGrid');
+            createGrid(pair.output, 'outputGrid');
+            addLog('Displaying test puzzle');
+        }
+
+        async function solvePuzzle() {
+            if (!currentPuzzle) {
+                addLog('No puzzle loaded, loading new puzzle...');
+                await loadNewPuzzle();
+                return;
+            }
+
+            try {
+                const pair = currentPuzzle.test && currentPuzzle.test.length > 0 
+                    ? currentPuzzle.test[0] 
+                    : currentPuzzle.train[currentTrainPair];
+
+                if (!pair || !pair.input || !pair.output) {
+                    addLog('Invalid puzzle data', true);
+                    return;
+                }
+
+                attemptCount++;
+                addLog(`Starting puzzle solving attempt ${attemptCount}`);
+                
+                const payload = {
+                    input: pair.input,
+                    output: pair.output
+                };
+                
+                addLog(`Sending payload to solve endpoint...`);
+                const response = await fetch(`${API_BASE}/api/solve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                updateDebugInfo({ solveResult: result });
+                
+                if (result.success) {
+                    if (result.result) {
+                        createGrid(result.result, 'outputGrid');
+                    }
+                    addLog(`Solve successful: ${result.message || 'No message'}`);
+                    
+                    if (result.similarity === 1) {
+                        addLog('Perfect match! Loading new puzzle...');
+                        setTimeout(loadNewPuzzle, 1000);
+                    }
+                } else {
+                    addLog(`Solve failed: ${result.error || 'Unknown error'}`, true);
+                }
+            } catch (error) {
+                addLog(`Error during solve: ${error.message}`, true);
+                updateDebugInfo({ solveError: error.message });
+            }
+            
+            await updateStats();
+        }
+
+        function createGrid(grid, containerId) {
+            const container = document.getElementById(containerId);
+            container.style.gridTemplateColumns = `repeat(${grid[0].length}, 30px)`;
+            container.innerHTML = '';
+            
+            grid.forEach(row => {
+                row.forEach(cell => {
+                    const div = document.createElement('div');
+                    div.className = 'cell';
+                    if (cell > 0) {
+                        // Use different colors for different numbers
+                        const hue = (cell * 30) % 360;
+                        div.style.backgroundColor = `hsl(${hue}, 70%, 50%)`;
+                    } else {
+                        div.style.backgroundColor = 'transparent';
+                    }
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        function updateDebugInfo(info) {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.textContent = JSON.stringify(info, null, 2);
+        }
+
+        function addLog(message, isError = false) {
+            const logs = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = `log-entry${isError ? ' error' : ''}`;
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            logs.insertBefore(entry, logs.firstChild);
+            console.log(isError ? 'ERROR:' : 'LOG:', message);
+        }
+
+        async function testConnection() {
+            try {
+                addLog('Testing connection...');
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                addLog(`Server response: ${JSON.stringify(data)}`);
+                updateDebugInfo({ connectionTest: data });
+            } catch (error) {
+                addLog(`Connection error: ${error.message}`, true);
+                updateDebugInfo({ connectionError: error.message });
+            }
+        }
+
+        async function updateStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('successRate').textContent = `${stats.successRate.toFixed(1)}%`;
+                document.getElementById('learnedStrategies').textContent = stats.learnedStrategies;
+                document.getElementById('totalAttempts').textContent = stats.totalAttempts;
+                document.getElementById('learningEfficiency').textContent = `${stats.learningEfficiency.toFixed(1)}%`;
+                
+                updateDebugInfo({ stats });
+            } catch (error) {
+                addLog('Error updating stats: ' + error.message, true);
+                updateDebugInfo({ statsError: error.message });
+            }
+        }
+
+        function startAutoSolving() {
+            if (!autoSolving) {
+                autoSolving = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                addLog('Started auto-solving');
+                autoSolve();
+            }
+        }
+
+        function stopAutoSolving() {
+            autoSolving = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            addLog('Stopped auto-solving');
+        }
+
+        async function autoSolve() {
+            while (autoSolving) {
+                try {
+                    if (!currentPuzzle) {
+                        await loadNewPuzzle();
+                        continue;
+                    }
+
+                    // First go through all training pairs
+                    if (currentTrainPair < currentPuzzle.train.length) {
+                        const pair = currentPuzzle.train[currentTrainPair];
+                        createGrid(pair.input, 'inputGrid');
+                        createGrid(pair.output, 'outputGrid');
+                        addLog(`Learning from training pair ${currentTrainPair + 1}/${currentPuzzle.train.length}`);
+                        
+                        // Wait to observe the training pair
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Move to next training pair
+                        currentTrainPair++;
+                        continue;
+                    }
+
+                    // After all training pairs, try to solve the test puzzle
+                    if (currentPuzzle.test && currentPuzzle.test.length > 0) {
+                        const testPair = currentPuzzle.test[0];
+                        createGrid(testPair.input, 'inputGrid');
+                        createGrid(testPair.output, 'outputGrid');
+                        addLog('Attempting to solve test puzzle');
+                        
+                        await solvePuzzle();
+                        
+                        // Wait before loading new puzzle
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Load a new puzzle
+                        await loadNewPuzzle();
+                        currentTrainPair = 0;
+                    } else {
+                        addLog('No test puzzle available', true);
+                        stopAutoSolving();
+                        break;
+                    }
+                } catch (error) {
+                    addLog('Auto-solve error: ' + error.message, true);
+                    stopAutoSolving();
+                    break;
+                }
+            }
+        }
+
+        async function resetStats() {
+            try {
+                addLog('Resetting stats...');
+                const response = await fetch(`${API_BASE}/api/reset`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    addLog('Stats reset successfully');
+                    updateStats();
+                    stopAutoSolving();
+                } else {
+                    addLog('Error resetting stats: ' + result.error, true);
+                }
+            } catch (error) {
+                addLog('Error resetting stats: ' + error.message, true);
+            }
+        }
+
+        // Initialize
+        initializeTheme();
+        loadNewPuzzle();
+        updateStats();
+        testConnection();
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,129 +1,832 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="utf-8">
-        <title>ARC testing interface</title>
+        <title>ARC AGI Testing Interface</title>
+        <style>
+            :root {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --bg-tertiary: #363636;
+                --text-primary: #e0e0e0;
+                --text-secondary: #b0b0b0;
+                --accent-success: #4caf50;
+                --accent-warning: #ff9800;
+                --accent-error: #f44336;
+                --accent-info: #2196F3;
+                --border-color: #404040;
+            }
 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-        <script src="js/common.js"></script>
-        <script src="js/testing_interface.js"></script>
+            body { 
+                font-family: Arial, sans-serif; 
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: var(--bg-primary);
+                color: var(--text-primary);
+            }
 
-        <link rel="stylesheet" type="text/css" href="css/common.css">
-        <link rel="stylesheet" type="text/css" href="css/testing_interface.css">
+            .container {
+                display: flex;
+                gap: 20px;
+                margin-bottom: 20px;
+            }
 
-        <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
+            .grid-container {
+                flex: 1;
+                background: var(--bg-secondary);
+                padding: 15px;
+                border-radius: 8px;
+            }
 
+            .grid { 
+                display: inline-grid; 
+                grid-gap: 2px; 
+                background: var(--bg-tertiary);
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 4px;
+            }
+
+            .cell { 
+                width: 30px; 
+                height: 30px; 
+                border: 1px solid var(--border-color);
+                background: var(--bg-secondary);
+            }
+
+            .cell.filled {
+                background: var(--text-primary);
+            }
+
+            .reasoning { 
+                margin: 20px 0; 
+                padding: 15px; 
+                background: var(--bg-secondary);
+                border-radius: 8px;
+            }
+
+            .step {
+                margin: 10px 0;
+                padding: 10px;
+                background: var(--bg-tertiary);
+                border-left: 3px solid var(--accent-info);
+                border-radius: 4px;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+                background: var(--accent-success);
+                color: var(--text-primary);
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: opacity 0.2s;
+            }
+
+            button:hover {
+                opacity: 0.9;
+            }
+
+            .score {
+                font-weight: bold;
+                color: var(--accent-success);
+            }
+
+            .controls {
+                margin: 20px 0;
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .auto-solve {
+                background: var(--accent-info);
+            }
+
+            .stats {
+                margin: 20px 0;
+                padding: 15px;
+                background: var(--bg-secondary);
+                border-radius: 8px;
+            }
+
+            .pattern {
+                margin: 10px 0;
+                padding: 10px;
+                background: var(--bg-tertiary);
+                border-left: 3px solid var(--accent-info);
+                border-radius: 4px;
+            }
+
+            .stats-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+
+            .failed-attempts {
+                background: var(--bg-tertiary);
+                border-left: 3px solid var(--accent-error);
+            }
+
+            .learning-progress {
+                margin-top: 20px;
+                padding: 15px;
+                background: var(--bg-tertiary);
+                border-radius: 4px;
+            }
+
+            .transformation-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 10px;
+                margin-top: 10px;
+            }
+
+            .stat-card {
+                padding: 10px;
+                background: var(--bg-secondary);
+                border-radius: 4px;
+                border: 1px solid var(--border-color);
+            }
+
+            .progress-bar {
+                width: 100%;
+                height: 8px;
+                background: var(--bg-secondary);
+                border-radius: 4px;
+                margin: 5px 0;
+                overflow: hidden;
+            }
+
+            .progress-fill {
+                height: 100%;
+                background: var(--accent-success);
+                transition: width 0.3s ease;
+            }
+
+            .progress-fill.warning {
+                background: var(--accent-warning);
+            }
+
+            .progress-fill.error {
+                background: var(--accent-error);
+            }
+
+            .metrics {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 10px;
+                margin: 15px 0;
+            }
+
+            .metric-card {
+                background: var(--bg-tertiary);
+                padding: 10px;
+                border-radius: 4px;
+                text-align: center;
+            }
+
+            .metric-value {
+                font-size: 24px;
+                font-weight: bold;
+                margin: 5px 0;
+            }
+
+            .metric-label {
+                color: var(--text-secondary);
+                font-size: 14px;
+            }
+
+            .learning-curve {
+                height: 200px;
+                background: var(--bg-tertiary);
+                margin: 15px 0;
+                padding: 10px;
+                border-radius: 4px;
+                position: relative;
+                border: 1px solid var(--border-color);
+            }
+
+            .curve-point {
+                position: absolute;
+                width: 6px;
+                height: 6px;
+                background: var(--accent-info);
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                transition: all 0.3s ease;
+            }
+
+            .curve-point:hover {
+                width: 10px;
+                height: 10px;
+                background: var(--accent-success);
+                z-index: 10;
+            }
+
+            .curve-line {
+                position: absolute;
+                height: 2px;
+                background: var(--accent-info);
+                opacity: 0.3;
+            }
+
+            .grid-cell-highlight {
+                animation: highlight 1s ease-in-out;
+            }
+
+            @keyframes highlight {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.2); background: var(--accent-info); }
+                100% { transform: scale(1); }
+            }
+
+            .logs-section {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: var(--bg-secondary);
+                border-top: 2px solid var(--border-color);
+                max-height: 30vh;
+                overflow-y: auto;
+                z-index: 100;
+                padding: 15px;
+            }
+
+            .logs-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+                position: sticky;
+                top: 0;
+                background: var(--bg-secondary);
+                padding: 5px 0;
+                z-index: 1;
+            }
+
+            .logs-content {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+            }
+
+            .log-column {
+                background: var(--bg-tertiary);
+                padding: 10px;
+                border-radius: 4px;
+                max-height: calc(30vh - 60px);
+                overflow-y: auto;
+            }
+
+            .log-entry {
+                margin: 5px 0;
+                padding: 8px;
+                background: var(--bg-secondary);
+                border-radius: 4px;
+                font-family: monospace;
+                font-size: 12px;
+                border-left: 3px solid var(--accent-info);
+            }
+
+            .log-entry.error {
+                border-left-color: var(--accent-error);
+            }
+
+            .log-entry.success {
+                border-left-color: var(--accent-success);
+            }
+
+            .log-entry.warning {
+                border-left-color: var(--accent-warning);
+            }
+
+            .timestamp {
+                color: var(--text-secondary);
+                font-size: 0.8em;
+            }
+
+            .main-content {
+                margin-bottom: 35vh;
+            }
+
+            .toggle-logs {
+                position: fixed;
+                bottom: 30vh;
+                right: 20px;
+                background: var(--accent-info);
+                color: var(--text-primary);
+                padding: 8px 15px;
+                border-radius: 4px;
+                cursor: pointer;
+                z-index: 101;
+            }
+        </style>
     </head>
     <body>
-        <div id="modal_bg">
-            <div id="modal">
-                <div>Welcome to the ARC testing interface. <br /> Choose a task file to start, or click on "Random task" to load one from the ARC project on GitHub.</div>
-                <br />
-                <input type="file" class="load_task"/>
-                <button onclick="randomTask()" id="random_task_btn">Random task</button>
+        <div class="main-content">
+        <h1>ARC AGI Testing Interface</h1>
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-value" id="success-rate">0%</div>
+                    <div class="metric-label">Success Rate</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="success-rate-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="strategy-count">0</div>
+                    <div class="metric-label">Learned Strategies</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="total-attempts">0</div>
+                    <div class="metric-label">Total Attempts</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="learning-efficiency">0%</div>
+                    <div class="metric-label">Learning Efficiency</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="learning-efficiency-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <div class="stats">
+                    <h3>Learning Progress</h3>
+                    <div class="learning-curve" id="learning-curve"></div>
+                    <div class="learning-progress">
+                        <h4>Transformation Success Rates</h4>
+                        <div class="transformation-stats" id="transformation-stats"></div>
+                    </div>
+                </div>
+                <div class="stats">
+                    <h3>Failed Attempts Analysis</h3>
+                    <div id="failed-attempts"></div>
+                </div>
+            </div>
+
+            <div class="container">
+                <div class="grid-container">
+            <h2>Input Grid</h2>
+            <div class="grid" id="input-grid"></div>
+        </div>
+                <div class="grid-container">
+            <h2>Output Grid</h2>
+            <div class="grid" id="output-grid"></div>
+        </div>
+            </div>
+
+            <div class="controls">
+                <button onclick="solvePuzzle()" class="solve">Solve Puzzle</button>
+                <button onclick="startAutoSolving()" class="auto-solve">Start Auto-Solving</button>
+                <button onclick="stopAutoSolving()" class="auto-solve">Stop Auto-Solving</button>
+            </div>
+
+        <div class="reasoning" id="reasoning-output"></div>
+            
+            <div class="stats">
+                <h3>Pattern Library</h3>
+                <div id="learned-patterns"></div>
             </div>
         </div>
-        <div id="workspace">
 
-            <div id="demonstration_examples_view">
-                <div class="text" id="task_demo_header">Task demonstration</div>
-                <div id="task_preview"></div>
-            </div>
-
-            <div id="evaluation_view">
-
-                <div id="evaluation-input-view">
-                    <div class="text">Test input grid <span id="current_test_input_id_display">0</span>/<span id="total_test_input_count_display">0</span>
-                        <button onclick="nextTestInput()">Next test input</button>
-                    </div>
-
-                    <div id="evaluation_input" class="selectable_grid"></div>
+        <button class="toggle-logs" onclick="toggleLogs()">Toggle Logs</button>
+        
+        <div class="logs-section" id="logs-section">
+            <div class="logs-header">
+                <h3>System Logs</h3>
+                <div>
+                    <button onclick="clearLogs()">Clear Logs</button>
+                    <button onclick="toggleLogs()">Hide</button>
                 </div>
-
-                <div id="evaluation_output_editor">
-
-                    <div id="load_task_control_btns">
-                        <label for="load_task_file_input">Load task JSON: </label>
-                        <input type="file" id="load_task_file_input" class="load_task" style="display: none;"/>
-                        <input type="button" value="Browse..." onclick="document.getElementById('load_task_file_input').click();" />
-                        <button onclick="randomTask()" id="random_task_btn"> Random... </button>
-                        <p>
-                        <label id='task_name' for="random_task_btn"> Task name: </label>
-                        <p>
-                        <label for="show_symbol_numbers">Show symbol numbers: </label>
-                        <input type="checkbox" id="show_symbol_numbers" name="show_symbol_numbers"
-                        onchange="changeSymbolVisibility()">
-                    </div>
-
-                    <div id="edition_view">
-                        <div id="editor_grid_control_btns">
-                            <div id="resize_control_btns">
-                                <label for="output_grid_size">Change grid size: </label>
-                                <input type="text" id="output_grid_size" class="grid_size_field" name="size" value="3x3">
-                                <button onclick="resizeOutputGrid()" id="resize_btn">Resize</button>
-                            </div>
-
-                            <button onclick="copyFromInput()">Copy from input</button>
-                            <button onclick="resetOutputGrid()">Reset grid</button>
-                            <button onclick="submitSolution()" id="submit_solution_btn">Submit!</button>
-                        </div>
-
-                        <div id="output_grid">
-                            <div class="edition_grid selectable_grid">
-                                <div class="row">
-                                    <div class="cell" symbol="0" x="0" y="0"></div>
-                                    <div class="cell" symbol="0" x="0" y="1"></div>
-                                    <div class="cell" symbol="0" x="0" y="2"></div>
-                                </div>
-                                <div class="row">
-                                    <div class="cell" symbol="0" x="1" y="0"></div>
-                                    <div class="cell" symbol="0" x="1" y="1"></div>
-                                    <div class="cell" symbol="0" x="1" y="2"></div>
-                                </div>
-                                <div class="row">
-                                    <div class="cell" symbol="0" x="2" y="0"></div>
-                                    <div class="cell" symbol="0" x="2" y="1"></div>
-                                    <div class="cell" symbol="0" x="2" y="2"></div>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div id="toolbar">
-                            <div>
-                                <input type="radio" id="tool_edit"
-                                 name="tool_switching" value="edit" checked>
-                                <label for="tool_edit">Edit</label>
-
-                                <input type="radio" id="tool_select"
-                                 name="tool_switching" value="select">
-                                <label for="tool_select">Select</label>
-
-                                <input type="radio" id="tool_floodfill"
-                                 name="tool_switching" value="floodfill">
-                                <label for="tool_floodfill">Flood fill</label>
-                            </div>
-                        </div>
-
-                        <div id="symbol_picker">
-                            <div class="symbol_preview symbol_0 selected-symbol-preview" symbol="0"></div>
-                            <div class="symbol_preview symbol_1" symbol="1"></div>
-                            <div class="symbol_preview symbol_2" symbol="2"></div>
-                            <div class="symbol_preview symbol_3" symbol="3"></div>
-                            <div class="symbol_preview symbol_4" symbol="4"></div>
-                            <div class="symbol_preview symbol_5" symbol="5"></div>
-                            <div class="symbol_preview symbol_6" symbol="6"></div>
-                            <div class="symbol_preview symbol_7" symbol="7"></div>
-                            <div class="symbol_preview symbol_8" symbol="8"></div>
-                            <div class="symbol_preview symbol_9" symbol="9"></div>
-                        </div>
-                    </div>
-
-                    <div id="error_display"></div>
-                    <div id="info_display"></div>
+            </div>
+            <div class="logs-content">
+                <div class="log-column">
+                    <h4>Transformation Logs</h4>
+                    <div id="transformation-logs"></div>
+                </div>
+                <div class="log-column">
+                    <h4>Learning Logs</h4>
+                    <div id="learning-logs"></div>
+                </div>
+                <div class="log-column">
+                    <h4>Error Logs</h4>
+                    <div id="error-logs"></div>
                 </div>
             </div>
         </div>
+
+        <script>
+            let autoSolveInterval = null;
+            let puzzleHistory = [];
+            let successfulStrategies = [];
+            let totalAttempts = 0;
+            let successfulAttempts = 0;
+            let transformationStats = new Map();
+            let failedAttempts = [];
+            let learningCurveData = [];
+            const maxDataPoints = 50;
+            let transformationLogs = [];
+            let learningLogs = [];
+            let errorLogs = [];
+            let isLogsVisible = true;
+
+            const testPuzzles = [
+                {
+                    input: [[1,0,1], [0,1,0], [1,0,1]],
+                    output: [[1,1,1], [1,0,1], [1,1,1]]
+                },
+                {
+                    input: [[0,1,0], [1,1,1], [0,1,0]],
+                    output: [[1,1,1], [1,0,1], [1,1,1]]
+                },
+                {
+                    input: [[1,1,0], [1,0,0], [0,0,0]],
+                    output: [[0,0,1], [0,0,1], [0,0,1]]
+                },
+                {
+                    input: [[1,0,0], [0,1,0], [0,0,1]],
+                    output: [[1,1,1], [1,1,1], [1,1,1]]
+                },
+                {
+                    input: [[0,0,0], [0,1,0], [0,0,0]],
+                    output: [[1,1,1], [1,1,1], [1,1,1]]
+                }
+            ];
+
+            function createGrid(gridData, containerId) {
+                const container = document.getElementById(containerId);
+                container.style.gridTemplateColumns = `repeat(${gridData[0].length}, 32px)`;
+                container.innerHTML = '';
+                
+                gridData.forEach((row, i) => {
+                    row.forEach((cell, j) => {
+                        const div = document.createElement('div');
+                        div.className = `cell ${cell === 1 ? 'filled' : ''}`;
+                        div.dataset.row = i;
+                        div.dataset.col = j;
+                        container.appendChild(div);
+                    });
+                });
+            }
+
+            async function solvePuzzle(puzzle = null) {
+                const currentPuzzle = puzzle || testPuzzles[0];
+                totalAttempts++;
+
+                createGrid(currentPuzzle.input, 'input-grid');
+                createGrid(currentPuzzle.output, 'output-grid');
+                highlightChanges(currentPuzzle.input, currentPuzzle.output);
+
+                addLog('transformation', `Starting puzzle solving attempt ${totalAttempts}`);
+
+                try {
+                    const response = await fetch('/api/solve', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ puzzle: currentPuzzle })
+                    });
+
+                    const result = await response.json();
+                    if (result.solution && result.solution.score >= 0.8) {
+                        successfulAttempts++;
+                        addLog('learning', `Found successful solution with score ${(result.solution.score * 100).toFixed(1)}%`, 'success');
+                        updateTransformationStats(result.solution.transformations, true);
+                        if (!puzzleHistory.some(p => 
+                            JSON.stringify(p.input) === JSON.stringify(currentPuzzle.input) &&
+                            JSON.stringify(p.output) === JSON.stringify(currentPuzzle.output)
+                        )) {
+                            puzzleHistory.push(currentPuzzle);
+                            addLog('learning', 'Added new puzzle to history');
+                        }
+                    } else {
+                        recordFailedAttempt(currentPuzzle, result);
+                        if (result.solution) {
+                            addLog('transformation', `Solution attempt failed with score ${(result.solution.score * 100).toFixed(1)}%`, 'warning');
+                            updateTransformationStats(result.solution.transformations, false);
+                        } else {
+                            addLog('error', 'No valid solution found', 'error');
+                        }
+                    }
+                    
+                    displayReasoning(result);
+                    updateStats();
+                    updateFailedAttempts();
+                } catch (error) {
+                    console.error('Error:', error);
+                    addLog('error', `Error: ${error.message}`, 'error');
+                    document.getElementById('reasoning-output').innerHTML = 
+                        '<p class="error">Error occurred while solving the puzzle</p>';
+                }
+            }
+
+            function displayReasoning(result) {
+                const output = document.getElementById('reasoning-output');
+                if (result.solution && result.reasoning) {
+                    const steps = result.reasoning.map(step => 
+                        `<div class="step">
+                            <p><strong>Step ${step.step}:</strong> ${step.hypothesis}</p>
+                            <p class="score">Score: ${(step.score * 100).toFixed(1)}%</p>
+                            <p>${step.reasoning}</p>
+                         </div>`
+                    ).join('');
+                    output.innerHTML = `
+                        <h3>Solution Found!</h3>
+                        <p>Best transformation: ${result.solution.hypothesis}</p>
+                        <p class="score">Final Score: ${(result.solution.score * 100).toFixed(1)}%</p>
+                        <h3>Reasoning Steps:</h3>
+                        ${steps}`;
+                } else {
+                    output.innerHTML = '<p>No solution found. The system could not determine a valid transformation.</p>';
+                }
+            }
+
+            function updateTransformationStats(transformations, wasSuccessful) {
+                if (!transformations) return;
+                
+                transformations.forEach(transform => {
+                    const stats = transformationStats.get(transform) || {
+                        name: transform,
+                        successes: 0,
+                        failures: 0,
+                        totalAttempts: 0
+                    };
+                    
+                    if (wasSuccessful) {
+                        stats.successes++;
+                        addLog('transformation', `Transformation ${transform} succeeded`, 'success');
+                    } else {
+                        stats.failures++;
+                        addLog('transformation', `Transformation ${transform} failed`, 'warning');
+                    }
+                    stats.totalAttempts++;
+                    stats.successRate = (stats.successes / stats.totalAttempts * 100).toFixed(1);
+                    
+                    transformationStats.set(transform, stats);
+                });
+            }
+
+            function recordFailedAttempt(puzzle, result) {
+                failedAttempts.push({
+                    puzzle,
+                    result,
+                    timestamp: new Date(),
+                    reason: result.solution ? 
+                        `Low score: ${(result.solution.score * 100).toFixed(1)}%` : 
+                        'No solution found'
+                });
+                
+                // Keep only the last 10 failed attempts
+                if (failedAttempts.length > 10) {
+                    failedAttempts.shift();
+                }
+            }
+
+            function updateMetrics() {
+                const successRate = totalAttempts > 0 ? (successfulAttempts / totalAttempts * 100) : 0;
+                const learningEfficiency = calculateLearningEfficiency();
+
+                document.getElementById('success-rate').textContent = `${successRate.toFixed(1)}%`;
+                document.getElementById('success-rate-bar').style.width = `${successRate}%`;
+                document.getElementById('success-rate-bar').className = `progress-fill ${getProgressClass(successRate)}`;
+
+                document.getElementById('learning-efficiency').textContent = `${learningEfficiency.toFixed(1)}%`;
+                document.getElementById('learning-efficiency-bar').style.width = `${learningEfficiency}%`;
+                document.getElementById('learning-efficiency-bar').className = `progress-fill ${getProgressClass(learningEfficiency)}`;
+
+                // Update learning curve
+                learningCurveData.push({
+                    attempt: totalAttempts,
+                    successRate: successRate
+                });
+                if (learningCurveData.length > maxDataPoints) {
+                    learningCurveData.shift();
+                }
+                updateLearningCurve();
+            }
+
+            function calculateLearningEfficiency() {
+                if (learningCurveData.length < 2) return 0;
+                const recentPoints = learningCurveData.slice(-10);
+                const improvement = recentPoints[recentPoints.length - 1].successRate - recentPoints[0].successRate;
+                return Math.max(0, improvement);
+            }
+
+            function getProgressClass(value) {
+                if (value >= 70) return '';
+                if (value >= 40) return 'warning';
+                return 'error';
+            }
+
+            function updateStats() {
+                document.getElementById('strategy-count').textContent = successfulStrategies.length;
+                document.getElementById('total-attempts').textContent = totalAttempts;
+                
+                updateMetrics();
+                
+                // Update transformation stats with progress bars
+                const statsContainer = document.getElementById('transformation-stats');
+                statsContainer.innerHTML = Array.from(transformationStats.values())
+                    .map(stat => `
+                        <div class="stat-card">
+                            <h5>${stat.name}</h5>
+                            <div class="progress-bar">
+                                <div class="progress-fill ${getProgressClass(stat.successRate)}" 
+                                     style="width: ${stat.successRate}%"></div>
+                            </div>
+                            <p>Success Rate: ${stat.successRate}%</p>
+                            <p>Attempts: ${stat.totalAttempts}</p>
+                        </div>
+                    `).join('');
+                
+                // Update pattern library with progress indicators
+                const patternLibrary = document.getElementById('learned-patterns');
+                patternLibrary.innerHTML = successfulStrategies.map(strategy => 
+                    `<div class="pattern">
+                        <p><strong>${strategy.name}</strong></p>
+                        <p>Transformations: ${strategy.transformations.join(' → ')}</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" 
+                                 style="width: ${(strategy.successRate * 100).toFixed(1)}%"></div>
+                        </div>
+                        <p>Success Rate: ${(strategy.successRate * 100).toFixed(1)}%</p>
+                        <p>Times Used: ${strategy.successCount || 1}</p>
+                    </div>`
+                ).join('');
+            }
+
+            function updateFailedAttempts() {
+                const container = document.getElementById('failed-attempts');
+                container.innerHTML = failedAttempts.map(attempt => `
+                    <div class="pattern failed-attempts">
+                        <p><strong>Failed Attempt</strong></p>
+                        <p>Reason: ${attempt.reason}</p>
+                        <p>Time: ${attempt.timestamp.toLocaleTimeString()}</p>
+                        ${attempt.result.solution ? 
+                            `<p>Best Score: ${(attempt.result.solution.score * 100).toFixed(1)}%</p>
+                             <p>Attempted: ${attempt.result.solution.transformations?.join(' → ') || 'N/A'}</p>` 
+                            : ''}
+                    </div>
+                `).join('');
+            }
+
+            function startAutoSolving() {
+                if (autoSolveInterval) return;
+                
+                let puzzleIndex = 0;
+                autoSolveInterval = setInterval(() => {
+                    const puzzle = testPuzzles[puzzleIndex % testPuzzles.length];
+                    solvePuzzle(puzzle);
+                    puzzleIndex++;
+                }, 5000); // Try a new puzzle every 5 seconds
+            }
+
+            function stopAutoSolving() {
+                if (autoSolveInterval) {
+                    clearInterval(autoSolveInterval);
+                    autoSolveInterval = null;
+                }
+            }
+
+            function updateLearningCurve() {
+                const container = document.getElementById('learning-curve');
+                container.innerHTML = '';
+                
+                if (learningCurveData.length < 2) return;
+
+                // Add grid lines
+                for (let i = 0; i <= 100; i += 20) {
+                    const line = document.createElement('div');
+                    line.className = 'curve-line';
+                    line.style.left = '0';
+                    line.style.right = '0';
+                    line.style.top = `${i}%`;
+                    container.appendChild(line);
+                }
+
+                // Add points and connecting lines
+                learningCurveData.forEach((point, index) => {
+                    if (index > 0) {
+                        const prevPoint = learningCurveData[index - 1];
+                        const line = document.createElement('div');
+                        line.className = 'curve-line';
+                        
+                        const x1 = ((index - 1) / (learningCurveData.length - 1)) * 100;
+                        const y1 = 100 - prevPoint.successRate;
+                        const x2 = (index / (learningCurveData.length - 1)) * 100;
+                        const y2 = 100 - point.successRate;
+                        
+                        const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                        const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                        
+                        line.style.width = `${length}%`;
+                        line.style.left = `${x1}%`;
+                        line.style.top = `${y1}%`;
+                        line.style.transform = `rotate(${angle}deg)`;
+                        line.style.transformOrigin = '0 0';
+                        
+                        container.appendChild(line);
+                    }
+
+                    const dot = document.createElement('div');
+                    dot.className = 'curve-point';
+                    const x = (index / (learningCurveData.length - 1)) * 100;
+                    const y = 100 - point.successRate;
+                    dot.style.left = `${x}%`;
+                    dot.style.top = `${y}%`;
+                    dot.title = `Attempt ${point.attempt}: ${point.successRate.toFixed(1)}% success rate`;
+                    container.appendChild(dot);
+                });
+            }
+
+            function highlightChanges(inputGrid, outputGrid) {
+                const inputCells = document.querySelectorAll('#input-grid .cell');
+                const outputCells = document.querySelectorAll('#output-grid .cell');
+
+                inputGrid.forEach((row, i) => {
+                    row.forEach((cell, j) => {
+                        if (cell !== outputGrid[i][j]) {
+                            const inputIndex = i * inputGrid[0].length + j;
+                            const outputIndex = i * outputGrid[0].length + j;
+                            inputCells[inputIndex].classList.add('grid-cell-highlight');
+                            outputCells[outputIndex].classList.add('grid-cell-highlight');
+                        }
+                    });
+                });
+            }
+
+            function addLog(type, message, level = 'info') {
+                const log = {
+                    timestamp: new Date(),
+                    message,
+                    level
+                };
+
+                switch (type) {
+                    case 'transformation':
+                        transformationLogs.unshift(log);
+                        if (transformationLogs.length > 50) transformationLogs.pop();
+                        break;
+                    case 'learning':
+                        learningLogs.unshift(log);
+                        if (learningLogs.length > 50) learningLogs.pop();
+                        break;
+                    case 'error':
+                        errorLogs.unshift(log);
+                        if (errorLogs.length > 50) errorLogs.pop();
+                        break;
+                }
+
+                updateLogs();
+            }
+
+            function updateLogs() {
+                document.getElementById('transformation-logs').innerHTML = transformationLogs
+                    .map(log => createLogEntry(log))
+                    .join('');
+                
+                document.getElementById('learning-logs').innerHTML = learningLogs
+                    .map(log => createLogEntry(log))
+                    .join('');
+                
+                document.getElementById('error-logs').innerHTML = errorLogs
+                    .map(log => createLogEntry(log))
+                    .join('');
+            }
+
+            function createLogEntry(log) {
+                return `
+                    <div class="log-entry ${log.level}">
+                        <span class="timestamp">${log.timestamp.toLocaleTimeString()}</span>
+                        <div>${log.message}</div>
+                    </div>
+                `;
+            }
+
+            function clearLogs() {
+                transformationLogs = [];
+                learningLogs = [];
+                errorLogs = [];
+                updateLogs();
+            }
+
+            function toggleLogs() {
+                const logsSection = document.getElementById('logs-section');
+                isLogsVisible = !isLogsVisible;
+                logsSection.style.display = isLogsVisible ? 'block' : 'none';
+            }
+
+            // Initialize with the first puzzle
+            window.onload = () => {
+                const puzzle = testPuzzles[0];
+                createGrid(puzzle.input, 'input-grid');
+                createGrid(puzzle.output, 'output-grid');
+                updateStats();
+            };
+        </script>
     </body>
 </html>
